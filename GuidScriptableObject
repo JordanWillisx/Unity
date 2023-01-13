@@ -1,0 +1,55 @@
+using System;
+using Unity.Collections;
+using Unity.Netcode;
+using UnityEditor;
+using UnityEngine;
+
+public struct ScriptableNetworkObject : INetworkSerializable
+    {
+        public FixedString64Bytes _guid;
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer)
+            where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref _guid);
+            
+        }
+
+    
+}
+public class ScriptableObjectIdAttribute : PropertyAttribute { }
+
+#if UNITY_EDITOR
+[CustomPropertyDrawer(typeof(ScriptableObjectIdAttribute))]
+public class ScriptableObjectIdDrawer : PropertyDrawer {
+    public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
+        GUI.enabled = false;
+        if (string.IsNullOrEmpty(property.stringValue)) {
+            property.stringValue = Guid.NewGuid().ToString();
+        }
+        EditorGUI.PropertyField(position, property, label, true);
+        GUI.enabled = true;
+    }
+}
+#endif
+/// <summary>
+    /// ScriptableObject that stores a GUID for unique identification. The population of this field is implemented
+    /// inside an Editor script.
+    /// </summary>
+    [System.Serializable]
+    public abstract class GuidScriptableObject : ScriptableObject
+    {
+
+
+        [ScriptableObjectId]
+        public string Id;
+
+        
+        void OnValidate()
+        {
+            if (String.IsNullOrEmpty(Id))
+            {
+                Id = Guid.NewGuid().ToString();
+            }
+        }
+        
+    }
